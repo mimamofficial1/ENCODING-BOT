@@ -1,5 +1,3 @@
-
-
 import asyncio
 import os
 import shutil
@@ -15,13 +13,13 @@ from .encoding import encode, extract_subs
 from .uploads import upload_worker
 
 output = InlineKeyboardMarkup([
-    [InlineKeyboardButton("ᴅᴇᴠᴇʟᴏᴘᴇʀ", url="https://t.me/akaza7902"),
-     InlineKeyboardButton("CantarellaBots", url="https://t.me/cantarellabots")]
+    [InlineKeyboardButton("👨‍💻 ᴍᴀɪɴᴛᴀɪɴᴇʀ", url="https://t.me/mimam_officialx"),
+     InlineKeyboardButton("📢 ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ", url="https://t.me/Mrn_Officialx")]
 ])
 
 start_but = InlineKeyboardMarkup([
-    [InlineKeyboardButton("sᴛᴀᴛs", callback_data="stats"), InlineKeyboardButton("Settings", callback_data="OpenSettings")],
-    [InlineKeyboardButton("ᴅᴇᴠᴇʟᴏᴘᴇʀ", url="https://t.me/akaza7902"), InlineKeyboardButton("CantarellaBots", url="https://t.me/cantarellabots")]])
+    [InlineKeyboardButton("👨‍💻 ᴍᴀɪɴᴛᴀɪɴᴇʀ", url="https://t.me/mimam_officialx"), InlineKeyboardButton("📢 ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ", url="https://t.me/Mrn_Officialx")],
+    [InlineKeyboardButton("💁‍♂️ ʜᴇʟᴘ", callback_data="start_help"), InlineKeyboardButton("💎 ᴀʙᴏᴜᴛ", callback_data="start_about")]])
 
 
 async def check_chat(message, chat):
