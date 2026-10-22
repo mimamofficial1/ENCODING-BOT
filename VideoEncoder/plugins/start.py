@@ -17,9 +17,9 @@ from ..utils.database.access_db import db
 from ..utils.database.add_user import AddUserToDatabase
 from ..utils.display_progress import TimeFormatter, humanbytes
 from ..utils.helper import check_chat, delete_downloads, start_but
+from ..utils.settings import START_IMG
 
 SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
-START_IMG = 'https://n.uguu.se/DtZgwBkS.jpg'
 
 START_TEXT = (
     f"<a href='{START_IMG}'>\u200b</a>"
@@ -67,7 +67,7 @@ For Owner:
 
 Supports: <a href='https://t.me/+lTO1v9u3v4FhODNl'>click here</a>"""
 
-ABOUT_TEXT = """<b>💎 ABOUT ENCODING BOT</b>
+ABOUT_TEXT = """<b>💎 ABOUT ENCODING BOT
 
 ⚙️ Video Encode • Compress • Customize
 
@@ -76,7 +76,7 @@ ABOUT_TEXT = """<b>💎 ABOUT ENCODING BOT</b>
 • Input: Telegram Files, Direct Links, GDrive
 • Database: MongoDB
 
-👨‍💻 Maintainer: <a href='https://t.me/mimam_officialx'>Mrn Officialx</a>"""
+👨‍💻 Maintainer: <a href='https://t.me/mimam_officialx'>Mrn Officialx</a></b>"""
 
 back_but = InlineKeyboardMarkup(
     [[InlineKeyboardButton("🔙 ʙᴀᴄᴋ", callback_data="start_back")]])
