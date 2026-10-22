@@ -1,7 +1,7 @@
-
-
 import asyncio
 import html
+import inspect
+import math
 import os
 import time
 from datetime import datetime
@@ -10,7 +10,10 @@ from urllib.parse import unquote_plus
 from httpx import delete
 from pyrogram.errors.exceptions.bad_request_400 import (MessageIdInvalid,
                                                         MessageNotModified)
+from pyrogram import raw
+from pyrogram.file_id import FileId
 from pyrogram.parser import html as pyrogram_html
+from pyrogram.session import Auth, Session
 from pyrogram.types import Message
 from requests.utils import unquote
 
@@ -243,6 +246,90 @@ async def handle_download_url(message, msg, batch):
     return filepath
 
 
+# Telegram download speed: ek saath kai connections (default sequential = slow)
+FAST_DL_CONNECTIONS = 8
+FAST_DL_CHUNK = 1024 * 1024
+FAST_DL_MIN_SIZE = 20 * 1024 * 1024
+
+
+async def fast_download(client, media, file_path, progress=None, progress_args=()):
+    """ Telegram file ko parallel connections se download karta hai """
+    file_id = FileId.decode(media.file_id)
+    file_size = media.file_size
+    location = raw.types.InputDocumentFileLocation(
+        id=file_id.media_id,
+        access_hash=file_id.access_hash,
+        file_reference=file_id.file_reference,
+        thumb_size=file_id.thumbnail_size
+    )
+    dc_id = file_id.dc_id
+    test_mode = await client.storage.test_mode()
+    home_dc = await client.storage.dc_id()
+    if dc_id != home_dc:
+        auth_key = await Auth(client, dc_id, test_mode).create()
+    else:
+        auth_key = await client.storage.auth_key()
+
+    count = max(1, min(FAST_DL_CONNECTIONS, math.ceil(file_size / FAST_DL_CHUNK)))
+    sessions = [Session(client, dc_id, auth_key, test_mode, is_media=True)
+                for _ in range(count)]
+    offsets = iter(range(0, file_size, FAST_DL_CHUNK))
+    state = {'done': 0, 'last': 0.0}
+    tasks = []
+    f = open(file_path, 'wb')
+
+    async def worker(session):
+        while True:
+            offset = next(offsets, None)
+            if offset is None:
+                return
+            r = await session.invoke(
+                raw.functions.upload.GetFile(
+                    location=location, offset=offset, limit=FAST_DL_CHUNK),
+                sleep_threshold=30
+            )
+            if not isinstance(r, raw.types.upload.File):
+                raise RuntimeError('Unsupported file response')
+            if len(r.bytes) != min(FAST_DL_CHUNK, file_size - offset):
+                raise RuntimeError('Short chunk received')
+            f.seek(offset)
+            f.write(r.bytes)
+            state['done'] += len(r.bytes)
+            now = time.time()
+            if progress and (now - state['last'] >= 1 or state['done'] >= file_size):
+                state['last'] = now
+                res = progress(min(state['done'], file_size),
+                               file_size, *progress_args)
+                if inspect.isawaitable(res):
+                    await res
+
+    try:
+        await sessions[0].start()
+        if dc_id != home_dc:
+            exported = await client.invoke(
+                raw.functions.auth.ExportAuthorization(dc_id=dc_id))
+            await sessions[0].invoke(
+                raw.functions.auth.ImportAuthorization(
+                    id=exported.id, bytes=exported.bytes))
+        if len(sessions) > 1:
+            await asyncio.gather(*(s.start() for s in sessions[1:]))
+        tasks = [asyncio.ensure_future(worker(s)) for s in sessions]
+        await asyncio.gather(*tasks)
+    except BaseException:
+        for t in tasks:
+            t.cancel()
+        raise
+    finally:
+        f.close()
+        for s in sessions:
+            try:
+                await s.stop()
+            except Exception:
+                pass
+    if os.path.getsize(file_path) != file_size:
+        raise RuntimeError('Downloaded size mismatch')
+
+
 async def handle_tg_down(message, msg, mode='no_reply'):
     c_time = time.time()
 
@@ -259,6 +346,24 @@ async def handle_tg_down(message, msg, mode='no_reply'):
         if not (message.reply_to_message and (message.reply_to_message.video or message.reply_to_message.document)):
              return None
         target_msg = message.reply_to_message
+
+    # Fast (parallel) download, fail ho toh normal download pe fallback
+    media = target_msg.video or target_msg.document
+    file_name = getattr(media, 'file_name', None)
+    if media and file_name and media.file_size and media.file_size >= FAST_DL_MIN_SIZE:
+        fast_path = os.path.join(download_dir, os.path.basename(file_name))
+        try:
+            await fast_download(
+                message._client, media, fast_path,
+                progress=progress_for_pyrogram,
+                progress_args=("Downloading...", msg, c_time))
+            return fast_path
+        except Exception as e:
+            LOGGER.error(f"Fast download failed, using normal download: {e}")
+            try:
+                os.remove(fast_path)
+            except OSError:
+                pass
 
     path = await target_msg.download(
         file_name=os.path.join(download_dir, ""),
