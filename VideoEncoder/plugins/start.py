@@ -9,7 +9,8 @@ from time import time
 from psutil import (boot_time, cpu_count, cpu_percent, disk_usage,
                     net_io_counters, swap_memory, virtual_memory)
 from pyrogram import Client, filters
-from pyrogram.types import Message
+from pyrogram.errors import MessageNotModified
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from .. import botStartTime, download_dir, encode_dir
 from ..utils.database.access_db import db
@@ -20,44 +21,24 @@ from ..utils.helper import check_chat, delete_downloads, start_but
 SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
 START_IMG = 'https://n.uguu.se/DtZgwBkS.jpg'
 
+START_TEXT = (
+    f"<a href='{START_IMG}'>\u200b</a>"
+    "<b>🔥 WELCOME TO ENCODING BOT 🔥\n\n"
+    "⚙️ Video Encode • Compress • Customize 🎬\n\n"
+    "🚀 Features:\n"
+    "• MKV / MP4 / AVI Convert\n"
+    "• H.264 / H.265 Encoding\n"
+    "• Custom Quality (CRF)\n"
+    "• Audio Edit & Rearrange\n"
+    "• 1080p → 360p Resolution\n"
+    "• Batch + Direct Link + GDrive\n\n"
+    "🛠️ Commands:\n"
+    "/dl • /ddl • /batch • /settings • /status\n\n"
+    "⚠️ Personal Use Only\n"
+    "👉 Send Video to Start 🚀</b>"
+)
 
-def uptime():
-    """ returns uptime """
-    return TimeFormatter(time.time() - botStartTime)
-
-
-@Client.on_message(filters.command('start'))
-async def start_message(app, message):
-    c = await check_chat(message, chat='Both')
-    if not c:
-        return
-    await AddUserToDatabase(app, message)
-    text = (
-        f"<a href='{START_IMG}'>\u200b</a>"
-        "<b>🔥 WELCOME TO ENCODING BOT 🔥\n\n"
-        "⚙️ Video Encode • Compress • Customize 🎬\n\n"
-        "🚀 Features:\n"
-        "• MKV / MP4 / AVI Convert\n"
-        "• H.264 / H.265 Encoding\n"
-        "• Custom Quality (CRF)\n"
-        "• Audio Edit & Rearrange\n"
-        "• 1080p → 360p Resolution\n"
-        "• Batch + Direct Link + GDrive\n\n"
-        "🛠️ Commands:\n"
-        "/dl • /ddl • /batch • /settings • /status\n\n"
-        "⚠️ Personal Use Only\n"
-        "👉 Send Video to Start 🚀</b>"
-    )
-    await message.reply(text=text, invert_media=True, reply_markup=start_but)
-
-
-@Client.on_message(filters.command('help'))
-async def help_message(app, message):
-    c = await check_chat(message, chat='Both')
-    if not c:
-        return
-    await AddUserToDatabase(app, message)
-    msg = """<b>📕 Commands List</b>:
+HELP_TEXT = """<b>📕 Commands List</b>:
 
 - Autodetect Telegram File.
 - /ddl - encode through DDL
@@ -84,7 +65,60 @@ For Owner:
 - /addchat and /addsudo
 - /rmsudo and /rmchat
 
-Supports: <a href='https://t.me/cantarellabots'>click here</a>"""
+Supports: <a href='https://t.me/+lTO1v9u3v4FhODNl'>click here</a>"""
+
+ABOUT_TEXT = """<b>💎 ABOUT ENCODING BOT</b>
+
+⚙️ Video Encode • Compress • Customize
+
+• Engine: FFmpeg (H.264 / H.265)
+• Formats: MKV / MP4 / AVI
+• Input: Telegram Files, Direct Links, GDrive
+• Database: MongoDB
+
+👨‍💻 Maintainer: <a href='https://t.me/mimam_officialx'>Mrn Officialx</a>"""
+
+back_but = InlineKeyboardMarkup(
+    [[InlineKeyboardButton("🔙 ʙᴀᴄᴋ", callback_data="start_back")]])
+
+
+def uptime():
+    """ returns uptime """
+    return TimeFormatter(time.time() - botStartTime)
+
+
+@Client.on_message(filters.command('start'))
+async def start_message(app, message):
+    c = await check_chat(message, chat='Both')
+    if not c:
+        return
+    await AddUserToDatabase(app, message)
+    await message.reply(text=START_TEXT, invert_media=True, reply_markup=start_but)
+
+
+@Client.on_callback_query(filters.regex('^(start_help|start_about|start_back)$'), group=1)
+async def start_buttons(app, cb):
+    await cb.answer()
+    img = f"<a href='{START_IMG}'>\u200b</a>"
+    if cb.data == 'start_help':
+        text, markup = img + HELP_TEXT, back_but
+    elif cb.data == 'start_about':
+        text, markup = img + ABOUT_TEXT, back_but
+    else:
+        text, markup = START_TEXT, start_but
+    try:
+        await cb.message.edit_text(text, invert_media=True, reply_markup=markup)
+    except MessageNotModified:
+        pass
+
+
+@Client.on_message(filters.command('help'))
+async def help_message(app, message):
+    c = await check_chat(message, chat='Both')
+    if not c:
+        return
+    await AddUserToDatabase(app, message)
+    msg = HELP_TEXT
     await message.reply(text=msg, disable_web_page_preview=True, reply_markup=start_but)
 
 
