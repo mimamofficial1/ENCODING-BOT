@@ -1,5 +1,3 @@
-
-
 import asyncio
 
 from pyrogram.errors import FloodWait, MessageNotModified
@@ -9,12 +7,15 @@ from .. import LOGGER
 from .database.access_db import db
 from .database.add_user import AddUserToDatabase
 
+START_IMG = 'https://n.uguu.se/DtZgwBkS.jpg'
+
 
 # Settings
 async def OpenSettings(event: Message, user_id: int):
     try:
         await event.edit(
-            text="Settings of the Bot<a href='https://ibb.co/RGx4RmDg'>!</a>",
+            text=f"<a href='{START_IMG}'>\u200b</a><b>Settings of the Bot!</b>",
+            invert_media=True,
             reply_markup=InlineKeyboardMarkup(
                 [
                     [InlineKeyboardButton("Video", callback_data="VideoSettings"), InlineKeyboardButton(
@@ -132,7 +133,8 @@ async def VideoSettings(event: Message, user_id: int):
             frame = 'Source'
 
         await event.edit(
-            text="Here's Your Video Settings<a href='https://ibb.co/RGx4RmDg'>:</a>",
+            text=f"<a href='{START_IMG}'>\u200b</a><b>Here's Your Video Settings:</b>",
+            invert_media=True,
             reply_markup=InlineKeyboardMarkup(
                 [
                     [InlineKeyboardButton(
@@ -237,7 +239,8 @@ async def AudioSettings(event: Message, user_id: int):
             channels = 'Source'
 
         await event.edit(
-            text="Here's Your Audio Settings<a href='https://ibb.co/RGx4RmDg'>:</a>",
+            text=f"<a href='{START_IMG}'>\u200b</a><b>Here's Your Audio Settings:</b>",
+            invert_media=True,
             reply_markup=InlineKeyboardMarkup(
                 [
                     [InlineKeyboardButton(f"Codec", callback_data="Watermark"), InlineKeyboardButton(
@@ -269,7 +272,8 @@ async def AudioSettings(event: Message, user_id: int):
 async def ExtraSettings(event: Message, user_id: int):
     try:
         await event.edit(
-            text="Here's Your Extra Settings<a href='https://ibb.co/RGx4RmDg'>:</a>",
+            text=f"<a href='{START_IMG}'>\u200b</a><b>Here's Your Extra Settings:</b>",
+            invert_media=True,
             reply_markup=InlineKeyboardMarkup(
                 [
                     [InlineKeyboardButton(
