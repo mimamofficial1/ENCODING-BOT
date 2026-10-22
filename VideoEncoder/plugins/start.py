@@ -1,5 +1,3 @@
-
-
 import os
 import shutil
 import time
@@ -20,6 +18,7 @@ from ..utils.display_progress import TimeFormatter, humanbytes
 from ..utils.helper import check_chat, delete_downloads, start_but
 
 SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+START_IMG = 'https://n.uguu.se/DtZgwBkS.jpg'
 
 
 def uptime():
@@ -33,8 +32,23 @@ async def start_message(app, message):
     if not c:
         return
     await AddUserToDatabase(app, message)
-    text = f"Hi {message.from_user.mention()}<a href='https://ibb.co/RGx4RmDg'>!</a> I'm VideoEncoder Bot which will do magic with your file."
-    await message.reply(text=text, reply_markup=start_but)
+    text = (
+        f"<a href='{START_IMG}'>\u200b</a>"
+        "<b>🔥 WELCOME TO ENCODING BOT 🔥\n\n"
+        "⚙️ Video Encode • Compress • Customize 🎬\n\n"
+        "🚀 Features:\n"
+        "• MKV / MP4 / AVI Convert\n"
+        "• H.264 / H.265 Encoding\n"
+        "• Custom Quality (CRF)\n"
+        "• Audio Edit & Rearrange\n"
+        "• 1080p → 360p Resolution\n"
+        "• Batch + Direct Link + GDrive\n\n"
+        "🛠️ Commands:\n"
+        "/dl • /ddl • /batch • /settings • /status\n\n"
+        "⚠️ Personal Use Only\n"
+        "👉 Send Video to Start 🚀</b>"
+    )
+    await message.reply(text=text, invert_media=True, reply_markup=start_but)
 
 
 @Client.on_message(filters.command('help'))
